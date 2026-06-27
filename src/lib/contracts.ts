@@ -1,0 +1,113 @@
+// Morpher protocol contract addresses on Base mainnet (chainId 8453).
+// Sourced from MorpherProtocol/deployments/8453.json.
+
+export const CONTRACTS = {
+  MorpherOracle: '0x694aa11EC58b7dE7F1bb3a83dae00dCa55Dc986B',
+  MorpherState: '0x361e10a8fa2C9a5c339Dbd2B3f1b6f6a22c2618F',
+  MorpherTradeEngine: '0x42747a45FAA00a55EC17c02AC8b1A360d4827a54',
+  MorpherToken: '0x537C96C822C15b8361f4DbbE56805bd4E60d0F05',
+} as const;
+
+export const BASE_CHAIN_ID = 8453;
+
+// ---- ABIs (viem const ABIs) ----
+
+export const ORACLE_ABI = [
+  {
+    type: 'function',
+    name: 'createOrder',
+    stateMutability: 'payable',
+    inputs: [
+      { name: '_marketId', type: 'bytes32' },
+      { name: '_closeSharesAmount', type: 'uint256' },
+      { name: '_openMPHTokenAmount', type: 'uint256' },
+      { name: '_tradeDirection', type: 'bool' },
+      { name: '_orderLeverage', type: 'uint256' },
+      { name: '_onlyIfPriceAbove', type: 'uint256' },
+      { name: '_onlyIfPriceBelow', type: 'uint256' },
+      { name: '_goodUntil', type: 'uint256' },
+      { name: '_goodFrom', type: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'bytes32' }],
+  },
+  {
+    type: 'function',
+    name: 'gasForCallback',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+] as const;
+
+export const STATE_ABI = [
+  {
+    type: 'function',
+    name: 'getMarketActive',
+    stateMutability: 'view',
+    inputs: [{ name: '', type: 'bytes32' }],
+    outputs: [{ name: '', type: 'bool' }],
+  },
+] as const;
+
+export const TRADE_ENGINE_ABI = [
+  {
+    type: 'function',
+    name: 'portfolio',
+    stateMutability: 'view',
+    inputs: [
+      { name: '', type: 'address' },
+      { name: '', type: 'bytes32' },
+    ],
+    outputs: [
+      { name: 'lastUpdated', type: 'uint256' },
+      { name: 'longShares', type: 'uint256' },
+      { name: 'shortShares', type: 'uint256' },
+      { name: 'meanEntryPrice', type: 'uint256' },
+      { name: 'meanEntrySpread', type: 'uint256' },
+      { name: 'meanEntryLeverage', type: 'uint256' },
+      { name: 'liquidationPrice', type: 'uint256' },
+      { name: 'positionHash', type: 'bytes32' },
+    ],
+  },
+  {
+    type: 'function',
+    name: 'getDeactivatedMarketPrice',
+    stateMutability: 'view',
+    inputs: [{ name: '', type: 'bytes32' }],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+] as const;
+
+export const TOKEN_ABI = [
+  {
+    type: 'function',
+    name: 'balanceOf',
+    stateMutability: 'view',
+    inputs: [{ name: '', type: 'address' }],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    type: 'function',
+    name: 'transfer',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: '', type: 'address' },
+      { name: '', type: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'bool' }],
+  },
+  {
+    type: 'function',
+    name: 'symbol',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'string' }],
+  },
+  {
+    type: 'function',
+    name: 'decimals',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint8' }],
+  },
+] as const;
