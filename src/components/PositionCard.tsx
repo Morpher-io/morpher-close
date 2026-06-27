@@ -10,7 +10,8 @@ import { useClosePosition } from '@/hooks/useClosePosition';
 import type { Position } from '@/hooks/usePositions';
 
 function fmtShares(v: bigint) {
-  const n = Number(formatUnits(v, 18));
+  // Morpher position shares are PRECISION-scaled (1e8), NOT token-scaled (1e18).
+  const n = Number(formatUnits(v, 8));
   return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
 }
 
@@ -18,6 +19,12 @@ function fmtPrice(v: bigint) {
   // Morpher market prices are stored with 8 decimals.
   const n = Number(formatUnits(v, 8));
   return n.toLocaleString(undefined, { maximumFractionDigits: 6 });
+}
+
+function fmtMph(v: bigint) {
+  // MPH has 18 decimals.
+  const n = Number(formatUnits(v, 18));
+  return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
 }
 
 export function PositionCard({
@@ -53,13 +60,17 @@ export function PositionCard({
             </Badge>
           </div>
           <p className="text-sm text-text-secondary">
-            {fmtShares(position.shares)} shares
-            {position.deactivatedPrice > 0n && (
+            {position.deactivatedPrice > 0n ? (
               <>
-                {' · '}
-                <span className="text-text-primary">
-                  Locked exit price: {fmtPrice(position.deactivatedPrice)}
+                <span className="font-medium text-text-primary">
+                  ≈ {fmtMph(position.estimatedMph)} MPH
                 </span>
+                {' on close · locked exit price '}
+                {fmtPrice(position.deactivatedPrice)}
+              </>
+            ) : (
+              <>
+                {fmtShares(position.shares)} shares · exit price not yet locked
               </>
             )}
           </p>

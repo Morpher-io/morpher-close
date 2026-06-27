@@ -76,7 +76,41 @@ export const TRADE_ENGINE_ABI = [
     inputs: [{ name: '', type: 'bytes32' }],
     outputs: [{ name: '', type: 'uint256' }],
   },
+  // Per-share value at a given market price — used to estimate the MPH a close returns.
+  {
+    type: 'function',
+    name: 'longShareValue',
+    stateMutability: 'view',
+    inputs: [
+      { name: '_positionAveragePrice', type: 'uint256' },
+      { name: '_positionAverageLeverage', type: 'uint256' },
+      { name: '_positionTimeStampInMs', type: 'uint256' },
+      { name: '_marketPrice', type: 'uint256' },
+      { name: '_marketSpread', type: 'uint256' },
+      { name: '_orderLeverage', type: 'uint256' },
+      { name: '_sell', type: 'bool' },
+    ],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    type: 'function',
+    name: 'shortShareValue',
+    stateMutability: 'view',
+    inputs: [
+      { name: '_positionAveragePrice', type: 'uint256' },
+      { name: '_positionAverageLeverage', type: 'uint256' },
+      { name: '_positionTimeStampInMs', type: 'uint256' },
+      { name: '_marketPrice', type: 'uint256' },
+      { name: '_marketSpread', type: 'uint256' },
+      { name: '_orderLeverage', type: 'uint256' },
+      { name: '_sell', type: 'bool' },
+    ],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
 ] as const;
+
+// Protocol fixed-point precision (1e8) — shares and leverage are scaled by this.
+export const PRECISION = 100000000n;
 
 export const TOKEN_ABI = [
   {
