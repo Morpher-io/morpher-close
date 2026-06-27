@@ -46,6 +46,8 @@ export const ORACLE_ABI = [
     outputs: [{ name: '', type: 'uint256' }],
   },
   // Gasless relayed order: relayer submits, position owner only signs the EIP-712 permit.
+  // NOTE: Base mainnet's deployed oracle exposes the (v, r, s) overload, NOT the bytes one
+  // (the bytes variant was added later in the contract source). Verified on-chain via fork test.
   {
     type: 'function',
     name: 'createOrderPermittedBySignature',
@@ -68,7 +70,9 @@ export const ORACLE_ABI = [
       },
       { name: '_addressPositionOwner', type: 'address' },
       { name: 'deadline', type: 'uint256' },
-      { name: '_signature', type: 'bytes' },
+      { name: 'v', type: 'uint8' },
+      { name: 'r', type: 'bytes32' },
+      { name: 's', type: 'bytes32' },
     ],
     outputs: [{ name: '', type: 'bytes32' }],
   },

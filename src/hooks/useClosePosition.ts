@@ -75,6 +75,11 @@ export function useClosePosition() {
             },
           });
 
+          // The deployed Base oracle takes (v, r, s), not a packed signature — split it.
+          const r = `0x${signature.slice(2, 66)}` as `0x${string}`;
+          const s = `0x${signature.slice(66, 130)}` as `0x${string}`;
+          const v = parseInt(signature.slice(130, 132), 16);
+
           const orderParams = {
             _marketId: marketId,
             _closeSharesAmount: shares,
@@ -91,7 +96,7 @@ export function useClosePosition() {
             address: CONTRACTS.MorpherOracle,
             abi: ORACLE_ABI,
             functionName: 'createOrderPermittedBySignature',
-            args: [orderParams, address, deadline, signature],
+            args: [orderParams, address, deadline, v, r, s],
             account: relayer.address,
             chain: base,
           });
