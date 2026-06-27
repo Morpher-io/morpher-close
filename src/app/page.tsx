@@ -5,6 +5,7 @@ import { Wallet } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Banner } from '@/components/Banner';
 import { PositionsList } from '@/components/PositionsList';
+import { RelayerBar } from '@/components/RelayerBar';
 import { CashOutCard } from '@/components/CashOutCard';
 import { ExportKeyNotice } from '@/components/ExportKeyNotice';
 import { ConnectButton } from '@/components/ConnectButton';
@@ -32,6 +33,7 @@ export default function Home() {
 
         {isConnected && address ? (
           <div className="space-y-6">
+            <RelayerBar address={address} />
             <PositionsList address={address} />
             <CashOutCard address={address} />
             <ExportKeyNotice />

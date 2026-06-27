@@ -37,6 +37,41 @@ export const ORACLE_ABI = [
     inputs: [],
     outputs: [{ name: '', type: 'uint256' }],
   },
+  // EIP-712 nonce for the position owner — incremented on each permitted order.
+  {
+    type: 'function',
+    name: 'nonces',
+    stateMutability: 'view',
+    inputs: [{ name: '', type: 'address' }],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  // Gasless relayed order: relayer submits, position owner only signs the EIP-712 permit.
+  {
+    type: 'function',
+    name: 'createOrderPermittedBySignature',
+    stateMutability: 'nonpayable',
+    inputs: [
+      {
+        name: 'createOrderParams',
+        type: 'tuple',
+        components: [
+          { name: '_marketId', type: 'bytes32' },
+          { name: '_closeSharesAmount', type: 'uint256' },
+          { name: '_openMPHTokenAmount', type: 'uint256' },
+          { name: '_tradeDirection', type: 'bool' },
+          { name: '_orderLeverage', type: 'uint256' },
+          { name: '_onlyIfPriceAbove', type: 'uint256' },
+          { name: '_onlyIfPriceBelow', type: 'uint256' },
+          { name: '_goodUntil', type: 'uint256' },
+          { name: '_goodFrom', type: 'uint256' },
+        ],
+      },
+      { name: '_addressPositionOwner', type: 'address' },
+      { name: 'deadline', type: 'uint256' },
+      { name: '_signature', type: 'bytes' },
+    ],
+    outputs: [{ name: '', type: 'bytes32' }],
+  },
 ] as const;
 
 export const STATE_ABI = [
