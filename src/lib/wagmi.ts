@@ -15,12 +15,13 @@ const WALLETCONNECT_PROJECT_ID =
 // viem's `base` chain already includes multicall3 at
 // 0xcA11bde05977b3631167028862bE2a173976CA11.
 //
-// multiInjectedProviderDiscovery is DISABLED on purpose: the relayer (a browser wallet like
-// Rabby) is connected separately via useRelayer's own EIP-6963 discovery, purely to pay gas.
-// If wagmi also discovered that injected provider, calling eth_requestAccounts on it (to connect
-// the relayer) would make wagmi grab it as the active account — hijacking the trade wallet
-// (header + positions would flip to the relayer). Disabling discovery keeps the trade wallet
-// (Morpher Wallet / WalletConnect) as the single wagmi connection; the relayer stays gas-only.
+// multiInjectedProviderDiscovery is DISABLED on purpose: injected browser wallets (Rabby,
+// MetaMask, ...) are connected separately via useWallets' own EIP-6963 discovery, each as its
+// own ConnectedWallet section. If wagmi ALSO discovered an injected provider, calling
+// eth_requestAccounts on it would make wagmi grab it as the active account — hijacking the
+// single wagmi connection (Morpher Wallet / WalletConnect). Disabling discovery keeps wagmi as
+// the lone home for the Morpher Wallet / WalletConnect connection; injected wallets live in
+// useWallets and never collide with it.
 export const config = createConfig({
   chains: [base],
   multiInjectedProviderDiscovery: false,

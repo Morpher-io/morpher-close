@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useClosePosition } from '@/hooks/useClosePosition';
 import type { Position } from '@/hooks/usePositions';
+import { walletHasGas, type ConnectedWallet } from '@/lib/wallets';
 
 function fmtShares(v: bigint) {
   // Morpher position shares are PRECISION-scaled (1e8), NOT token-scaled (1e18).
@@ -29,13 +30,17 @@ function fmtMph(v: bigint) {
 
 export function PositionCard({
   position,
+  owner,
+  gasWallet,
   onClosed,
 }: {
   position: Position;
+  owner: ConnectedWallet;
+  gasWallet: ConnectedWallet | null;
   onClosed?: () => void;
 }) {
   const { close, isPending, isConfirming, isSuccess, error } =
-    useClosePosition();
+    useClosePosition(owner, gasWallet);
 
   React.useEffect(() => {
     if (isSuccess) onClosed?.();
@@ -43,6 +48,8 @@ export function PositionCard({
 
   const isLong = position.direction === 'long';
   const busy = isPending || isConfirming;
+  const relayed =
+    !walletHasGas(owner) && !!gasWallet && gasWallet.key !== owner.key;
 
   return (
     <Card>
@@ -99,6 +106,11 @@ export function PositionCard({
           )}
         </div>
       </CardContent>
+      {relayed && !isSuccess && (
+        <p className="px-4 pb-3 text-xs text-text-secondary">
+          Gas paid by {gasWallet.label}
+        </p>
+      )}
       {error && (
         <p className="px-4 pb-3 text-xs text-danger">
           {error.message.split('\n')[0]}

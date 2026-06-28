@@ -1,12 +1,12 @@
 'use client';
 
 import * as React from 'react';
-import { useAccount, useWalletClient, usePublicClient } from 'wagmi';
+import { usePublicClient } from 'wagmi';
 import { base } from 'viem/chains';
 import { CONTRACTS, ORACLE_ABI } from '@/lib/contracts';
 import { ORACLE_EIP712_DOMAIN, CREATE_ORDER_TYPES } from '@/lib/eip712';
 import { marketIdHash } from '@/lib/markets';
-import { useRelayer } from './useRelayer';
+import { walletHasGas, type ConnectedWallet } from '@/lib/wallets';
 import type { Position } from './usePositions';
 
 // 1e8 — the order-leverage convention used by createOrder (1.0x = 100000000).
@@ -14,11 +14,11 @@ const ORDER_LEVERAGE_1X = 100000000n;
 
 type Status = 'idle' | 'pending' | 'confirming' | 'success' | 'error';
 
-export function useClosePosition() {
-  const { address } = useAccount();
-  const { data: tradeClient } = useWalletClient(); // the connected trade wallet (holds positions)
+export function useClosePosition(
+  owner: ConnectedWallet,
+  gasWallet: ConnectedWallet | null,
+) {
   const publicClient = usePublicClient();
-  const { relayer } = useRelayer();
 
   const [status, setStatus] = React.useState<Status>('idle');
   const [error, setError] = React.useState<Error | null>(null);
@@ -35,8 +35,6 @@ export function useClosePosition() {
       setError(null);
       setHash(undefined);
       try {
-        if (!address) throw new Error('No connected wallet');
-        if (!tradeClient) throw new Error('Trade wallet client unavailable');
         if (!publicClient) throw new Error('Public client unavailable');
 
         // To close a LONG, send a SELL (tradeDirection = false) for the held shares.
@@ -44,24 +42,47 @@ export function useClosePosition() {
         const closeDir = position.direction === 'long' ? false : true;
         const shares = position.shares;
         const marketId = marketIdHash(position.name);
+        const ownerCanPay = walletHasGas(owner);
 
         let txHash: `0x${string}`;
 
-        if (relayer) {
-          // RELAYED (gasless) path: trade wallet signs the EIP-712 permit (free),
-          // relayer wallet submits the tx and pays the gas.
+        if (ownerCanPay) {
+          // DIRECT path: the owner wallet pays its own gas.
+          setStatus('pending');
+          txHash = await owner.walletClient.writeContract({
+            address: CONTRACTS.MorpherOracle,
+            abi: ORACLE_ABI,
+            functionName: 'createOrder',
+            args: [
+              marketId, // _marketId
+              shares, // _closeSharesAmount
+              0n, // _openMPHTokenAmount
+              closeDir, // _tradeDirection
+              ORDER_LEVERAGE_1X, // _orderLeverage
+              0n, // _onlyIfPriceAbove
+              0n, // _onlyIfPriceBelow
+              0n, // _goodUntil
+              0n, // _goodFrom
+            ],
+            value: 0n,
+            account: owner.address,
+            chain: base,
+          });
+        } else if (gasWallet && gasWallet.key !== owner.key) {
+          // RELAYED (gasless) path: owner signs the EIP-712 permit (free),
+          // the relayer wallet submits the tx and pays the gas.
           const nonce = (await publicClient.readContract({
             address: CONTRACTS.MorpherOracle,
             abi: ORACLE_ABI,
             functionName: 'nonces',
-            args: [address],
+            args: [owner.address],
           })) as bigint;
 
           const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600);
 
           setStatus('pending');
-          const signature = await tradeClient.signTypedData({
-            account: address,
+          const signature = await owner.walletClient.signTypedData({
+            account: owner.address,
             domain: ORACLE_EIP712_DOMAIN,
             types: CREATE_ORDER_TYPES,
             primaryType: 'CreateOrder',
@@ -69,7 +90,7 @@ export function useClosePosition() {
               _marketId: marketId,
               _closeSharesAmount: shares,
               _openMPHTokenAmount: 0n,
-              _msgSender: address,
+              _msgSender: owner.address,
               nonce,
               deadline,
             },
@@ -92,36 +113,18 @@ export function useClosePosition() {
             _goodFrom: 0n,
           } as const;
 
-          txHash = await relayer.walletClient.writeContract({
+          txHash = await gasWallet.walletClient.writeContract({
             address: CONTRACTS.MorpherOracle,
             abi: ORACLE_ABI,
             functionName: 'createOrderPermittedBySignature',
-            args: [orderParams, address, deadline, v, r, s],
-            account: relayer.address,
+            args: [orderParams, owner.address, deadline, v, r, s],
+            account: gasWallet.address,
             chain: base,
           });
         } else {
-          // DIRECT path: the trade wallet pays its own gas.
-          setStatus('pending');
-          txHash = await tradeClient.writeContract({
-            address: CONTRACTS.MorpherOracle,
-            abi: ORACLE_ABI,
-            functionName: 'createOrder',
-            args: [
-              marketId, // _marketId
-              shares, // _closeSharesAmount
-              0n, // _openMPHTokenAmount
-              closeDir, // _tradeDirection
-              ORDER_LEVERAGE_1X, // _orderLeverage
-              0n, // _onlyIfPriceAbove
-              0n, // _onlyIfPriceBelow
-              0n, // _goodUntil
-              0n, // _goodFrom
-            ],
-            value: 0n,
-            account: address,
-            chain: base,
-          });
+          throw new Error(
+            'No connected wallet has Base ETH to pay gas. Connect a browser wallet that holds ETH, or fund this wallet.',
+          );
         }
 
         setHash(txHash);
@@ -133,7 +136,7 @@ export function useClosePosition() {
         setStatus('error');
       }
     },
-    [address, tradeClient, publicClient, relayer],
+    [owner, gasWallet, publicClient],
   );
 
   return {

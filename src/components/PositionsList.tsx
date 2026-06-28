@@ -3,10 +3,19 @@
 import { Loader2 } from 'lucide-react';
 import type { Address } from 'viem';
 import { usePositions } from '@/hooks/usePositions';
+import type { ConnectedWallet } from '@/lib/wallets';
 import { PositionCard } from './PositionCard';
 import { Card, CardContent } from '@/components/ui/card';
 
-export function PositionsList({ address }: { address: Address }) {
+export function PositionsList({
+  address,
+  owner,
+  gasWallet,
+}: {
+  address: Address;
+  owner: ConnectedWallet;
+  gasWallet: ConnectedWallet | null;
+}) {
   const { data: positions, isLoading, isError, error, refetch } =
     usePositions(address);
 
@@ -45,10 +54,16 @@ export function PositionsList({ address }: { address: Address }) {
   return (
     <div className="space-y-3">
       <h2 className="text-sm font-semibold text-text-secondary">
-        Your open positions ({positions.length})
+        Open positions ({positions.length})
       </h2>
       {positions.map((p) => (
-        <PositionCard key={p.name} position={p} onClosed={() => refetch()} />
+        <PositionCard
+          key={p.name}
+          position={p}
+          owner={owner}
+          gasWallet={gasWallet}
+          onClosed={() => refetch()}
+        />
       ))}
     </div>
   );

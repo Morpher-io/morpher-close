@@ -1,7 +1,7 @@
 'use client';
 
 /* eslint-disable @next/next/no-img-element */
-import { ConnectButton } from './ConnectButton';
+import { AddWalletDialog } from './AddWalletDialog';
 
 export function Header() {
   return (
@@ -19,7 +19,7 @@ export function Header() {
             Close your positions
           </span>
         </div>
-        <ConnectButton />
+        <AddWalletDialog label="Add wallet" />
       </div>
     </header>
   );

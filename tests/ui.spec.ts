@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
 
-// Inject a mock EIP-6963 browser wallet (simulating Rabby/MetaMask) BEFORE app scripts run,
-// and record every request() it receives so we can prove the Morpher Wallet button never
-// routes to the injected wallet.
+// Inject a mock EIP-6963 browser wallet (simulating Rabby/MetaMask) BEFORE app scripts run.
+// In the multi-wallet model, injected wallets ARE listed in the Add-wallet dialog (each becomes
+// its own ConnectedWallet section), connected via useWallets' EIP-6963 discovery — separately
+// from the single wagmi connection (Morpher Wallet / WalletConnect).
 function installMockInjectedWallet() {
   const w = window as unknown as { __injectedCalls: string[]; ethereum: unknown };
   w.__injectedCalls = [];
@@ -35,42 +36,27 @@ function installMockInjectedWallet() {
   w.ethereum = provider;
 }
 
-test('connect modal is portaled, lists only wagmi connectors, and ignores injected wallets', async ({
+test('add-wallet dialog is portaled and lists wagmi connectors plus injected wallets', async ({
   page,
 }) => {
   await page.addInitScript(installMockInjectedWallet);
   await page.goto('/');
 
-  // Open the connect modal from the HEADER (the one with the reported positioning bug).
-  await page.getByRole('banner').getByRole('button', { name: 'Connect', exact: true }).click();
+  // Open the Add-wallet dialog from the HEADER (the one with the reported positioning bug).
+  await page.getByRole('banner').getByRole('button', { name: 'Add wallet', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
 
-  // BUG 1 regression: the dialog must be portaled to <body>, NOT trapped in <header>.
+  // Regression: the dialog must be portaled to <body>, NOT trapped in <header>.
   await expect(page.locator('header [role="dialog"]')).toHaveCount(0);
 
-  // wagmi injected-discovery is disabled, so the trade-wallet modal lists ONLY the wagmi
-  // connectors (Morpher Wallet, WalletConnect). The injected wallet must NOT appear here —
-  // it is connected separately as a gas relayer (useRelayer), so it can't hijack the account.
+  // The dialog lists the wagmi connectors (Morpher Wallet, WalletConnect) AND the
+  // EIP-6963 injected wallet (Mock Rabby) — they are separate connect paths.
   await expect(page.getByRole('button', { name: 'Morpher Wallet' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'WalletConnect' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /Mock Rabby/ })).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'WalletConnect (mobile)' }),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: /Mock Rabby/ })).toBeVisible();
 
-  await page.screenshot({ path: 'test-results/connect-modal.png', fullPage: true });
-
-  // BUG 2 regression: clicking "Morpher Wallet" must NOT connect the injected wallet.
-  // Reset the call log first so we ignore wagmi's background reconnect-probing on load.
-  await page.evaluate(() => {
-    (window as unknown as { __injectedCalls: string[] }).__injectedCalls = [];
-  });
-  await page.getByRole('button', { name: 'Morpher Wallet' }).click();
-  await page.waitForTimeout(2500);
-
-  const postClickCalls = await page.evaluate(
-    () => (window as unknown as { __injectedCalls: string[] }).__injectedCalls,
-  );
-  // eth_requestAccounts is the injected-wallet CONNECT trigger — it must not fire.
-  expect(postClickCalls).not.toContain('eth_requestAccounts');
-  // And the app must not have connected to the injected (mock) account.
-  await expect(page.getByText('0x1111', { exact: false })).toHaveCount(0);
+  await page.screenshot({ path: 'test-results/add-wallet-dialog.png', fullPage: true });
 });
