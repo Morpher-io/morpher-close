@@ -183,4 +183,40 @@ export const TOKEN_ABI = [
     inputs: [],
     outputs: [{ name: '', type: 'uint8' }],
   },
+  // EIP-2612 permit support (MorpherToken inherits ERC20PermitUpgradeable). Enables gasless
+  // transfers: the owner signs a permit (free), a relayer submits permit + transferFrom and
+  // pays the gas. Verified end-to-end on a Base fork.
+  {
+    type: 'function',
+    name: 'nonces',
+    stateMutability: 'view',
+    inputs: [{ name: 'owner', type: 'address' }],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    type: 'function',
+    name: 'permit',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'owner', type: 'address' },
+      { name: 'spender', type: 'address' },
+      { name: 'value', type: 'uint256' },
+      { name: 'deadline', type: 'uint256' },
+      { name: 'v', type: 'uint8' },
+      { name: 'r', type: 'bytes32' },
+      { name: 's', type: 'bytes32' },
+    ],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'transferFrom',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'from', type: 'address' },
+      { name: 'to', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'bool' }],
+  },
 ] as const;
