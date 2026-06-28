@@ -35,7 +35,7 @@ function installMockInjectedWallet() {
   w.ethereum = provider;
 }
 
-test('connect modal is portaled, lists connectors, and Morpher Wallet ignores the injected wallet', async ({
+test('connect modal is portaled, lists only wagmi connectors, and ignores injected wallets', async ({
   page,
 }) => {
   await page.addInitScript(installMockInjectedWallet);
@@ -49,10 +49,12 @@ test('connect modal is portaled, lists connectors, and Morpher Wallet ignores th
   // BUG 1 regression: the dialog must be portaled to <body>, NOT trapped in <header>.
   await expect(page.locator('header [role="dialog"]')).toHaveCount(0);
 
-  // Connector list: the discovered wallet, WalletConnect, and Morpher Wallet.
+  // wagmi injected-discovery is disabled, so the trade-wallet modal lists ONLY the wagmi
+  // connectors (Morpher Wallet, WalletConnect). The injected wallet must NOT appear here —
+  // it is connected separately as a gas relayer (useRelayer), so it can't hijack the account.
   await expect(page.getByRole('button', { name: 'Morpher Wallet' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'WalletConnect' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /Mock Rabby/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Mock Rabby/ })).toHaveCount(0);
 
   await page.screenshot({ path: 'test-results/connect-modal.png', fullPage: true });
 
