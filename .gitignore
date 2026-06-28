@@ -9,7 +9,7 @@
 /build
 
 # env
-.env
+# .env # we can publish this as its a frontend facing stuff only
 .env*.local
 .env.local
 
