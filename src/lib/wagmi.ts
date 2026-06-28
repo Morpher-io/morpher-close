@@ -6,8 +6,11 @@ import { morpherWalletConnector } from './morpherWalletConnector';
 const BASE_RPC_URL =
   process.env.NEXT_PUBLIC_BASE_RPC_URL ?? 'https://mainnet.base.org';
 
+// Public, domain-whitelisted WalletConnect (Reown) projectId — whitelisted to
+// close.morpher.com + localhost:3000. Safe to commit (it's a client-side id, gated by domain).
+// `||` (not `??`) so an empty env var still falls back to this default.
 const WALLETCONNECT_PROJECT_ID =
-  process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? 'PLACEHOLDER_PROJECT_ID';
+  process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '2b09d85e0c2013c83c59f688f5beb307';
 
 // viem's `base` chain already includes multicall3 at
 // 0xcA11bde05977b3631167028862bE2a173976CA11.
