@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { usePublicClient } from 'wagmi';
 import type { Address } from 'viem';
-import { CONTRACTS, TRADE_ENGINE_ABI, PRECISION } from '@/lib/contracts';
+import { CONTRACTS, TRADE_ENGINE_ABI } from '@/lib/contracts';
 import { MARKET_NAMES, marketIdHash } from '@/lib/markets';
 
 export interface Position {
@@ -120,8 +120,9 @@ export function usePositions(address?: Address) {
       });
 
       // 4) For markets WITH a locked price, estimate the MPH a close returns:
-      //    estimatedMph = shares * shareValue(lockedPrice) / PRECISION. (≈ — interest accrues
-      //    until the actual close.) No estimate without a locked price.
+      //    estimatedMph (wei) = shares * shareValue(lockedPrice). The contract mints exactly this
+      //    on close (verified on-chain) — do NOT divide by PRECISION. (≈ — interest accrues until
+      //    the actual close.) No estimate without a locked price.
       const valued = held.filter((h) => h.deactivatedPrice > 0n);
       const estByName = new Map<string, bigint>();
       if (valued.length > 0) {
@@ -146,7 +147,7 @@ export function usePositions(address?: Address) {
           const r = valueResults[i];
           if (r?.status === 'success') {
             const shareValue = r.result as unknown as bigint;
-            estByName.set(h.name, (h.shares * shareValue) / PRECISION);
+            estByName.set(h.name, h.shares * shareValue);
           }
         });
       }
